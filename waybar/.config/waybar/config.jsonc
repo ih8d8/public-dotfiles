@@ -1,0 +1,198 @@
+{
+    "layer": "top",
+    "position": "top",
+    "mod": "dock",
+    "exclusive": true,
+    "passthrough": false,
+    "gtk-layer-shell": true,
+    "height": 20,
+    "modules-left": [
+        "hyprland/workspaces",
+        "tray",
+        "idle_inhibitor",
+        "custom/ip_flag",
+        "hyprland/language"
+    ],
+    "modules-center": [
+        "custom/weather",
+        "clock"
+    ],
+    "modules-right": [
+        "pulseaudio#microphone",
+        "pulseaudio",
+        "backlight",
+        "disk",
+        "memory",
+        "cpu",
+        "temperature",
+        "battery",
+        "custom/power_btn"
+    ],
+    
+    "include": [
+        "~/.config/waybar/language.jsonc"
+    ],
+
+    "hyprland/workspaces": {
+        "format": "{icon}",
+        "disable-scroll": true,
+        "all-outputs": true,
+        "on-click": "activate",
+        "format-icons": {
+            "1": "",
+            "2": "",
+            "3": "",
+            "4": "",
+            "5": "",
+            "6": "",
+            "7": "",
+            "8": "",
+            "9": "",
+            "10": ""
+        },
+        "sort-by-number": true
+    },
+
+    "custom/weather": {
+        "tooltip" : true,
+        "format" : "{}",
+        "interval" : 1800,
+        "exec" : "waybar-wttr",
+        "return-type" : "json"
+    },
+
+    "custom/ip_flag": {
+        "tooltip" : true,
+        "format" : "IP: {}",
+        "interval" : 600,
+        "exec" : "ip-country-flag",
+        "return-type" : "json"
+    },
+
+    "idle_inhibitor": {
+        "format": "{icon}",
+        "format-icons": {
+            "activated": "󰛐",
+            "deactivated": "󰛑"
+        },
+        "tooltip": true
+    },
+
+    "tray": {
+        "icon-size": 16,
+        "spacing": 10
+    },
+
+    "pulseaudio#microphone": {
+        "format": "{format_source}",
+        "format-source": "",
+        "format-source-muted": "",
+        "on-click": "mic-level toggle-mute",
+        "on-click-right": "pavucontrol",
+        "on-scroll-up": "mic-level increase",
+        "on-scroll-down": "mic-level decrease",
+        "scroll-step": 5,
+        "tooltip": false,
+        "tooltip-format": "Mic Level: {volume}%"
+    },
+
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-bluetooth": "{icon} {volume}%",
+        "format-muted": "",
+        "on-click": "audio-level toggle-mute",
+        "on-click-right": "pavucontrol",
+        "on-scroll-up": "audio-level increase",
+        "on-scroll-down": "audio-level decrease",
+        "scroll-step": 5,
+        "format-icons": {
+            "headphone": "",
+            "hands-free": "",
+            "headset": "",
+            "phone": "",
+            "portable": "",
+            "car": "",
+            "default": ["", "", ""]
+        },
+        "tooltip": true,
+        "tooltip-format": "Volume: {volume}%"
+    },
+
+    "backlight": {
+        "device": "intel_backlight",
+        "format": "{icon} {percent}%",
+        "format-alt-click": "click-right",
+        "format-alt": "{icon} {percent}%",
+        "format-icons": ["󰃞", "󰃟", "󰃠"],
+        "on-scroll-up": "brightness-level increase 5",
+        "on-scroll-down": "brightness-level decrease 5 "
+    },
+
+    "clock": {
+        "format": "🕒 {:%A, %B %d, %Y (%R)}",
+        "format-alt": "🕒 {:%H:%M}",
+        "tooltip-format": "<tt><small>{calendar}</small></tt>",
+        "calendar": {
+                    "mode"          : "year",
+                    "mode-mon-col"  : 3,
+                    "weeks-pos"     : "right",
+                    "on-scroll"     : 1,
+                    "on-click-right": "mode",
+                    "format": {
+                              "months":     "<span color='#ffead3'><b>{}</b></span>",
+                              "days":       "<span color='#ecc6d9'><b>{}</b></span>",
+                              "weeks":      "<span color='#99ffdd'><b>W{}</b></span>",
+                              "weekdays":   "<span color='#ffcc66'><b>{}</b></span>",
+                              "today":      "<span color='#ff6699'><b><u>{}</u></b></span>"
+                              }
+                    },
+        "actions":  {
+                    "on-click-right": "mode",
+                    "on-click-forward": "tz_up",
+                    "on-click-backward": "tz_down",
+                    "on-scroll-up": "shift_up",
+                    "on-scroll-down": "shift_down"
+                    }
+    },
+
+    "memory": {
+        "interval": 10,
+        "format": " {}%",
+        "max-length": 10,
+        "on-click": "alacritty --title waybar-alacritty -e btop"
+    },
+
+    "battery": {
+        "states": {
+            "good": 80,
+            "warning": 30,
+            "critical": 20
+        },
+        "format": "{icon} {capacity}%",
+        "format-charging": " {capacity}%",
+        "format-plugged": " {capacity}%",
+        "format-alt-click": "click-right",
+        "format-alt": "{icon} {capacity}%",
+        "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]
+    },
+
+    "custom/power_btn": {
+        "format": "",
+        "on-click": "sh -c '(sleep 0.5s; wlogout --protocol layer-shell)' & disown",
+        "tooltip": false
+    },
+
+    "cpu": {
+        "format": " {usage}%",
+        "interval": 10,
+        "max-length": 10,
+        "on-click": "alacritty --title waybar-alacritty -e btop"
+    },
+
+    "disk": {
+        "interval": 30,
+        "format": " {percentage_used}%",
+        "path": "/",
+        "on-click": "alacritty --title waybar-alacritty -e btop"
+    }
+}

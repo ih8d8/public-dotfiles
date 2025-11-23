@@ -1,0 +1,52 @@
+#!/bin/bash
+
+source ~/.local/bin/determine-launcher
+
+KEEPASSXC_PASS_PATH="passwords/misc/keepassxc/main"
+KEEPASSXC_DATABASE_PATH=$(readlink -f ~/.config/keepassxc/databases/main.kdbx)
+CLIP_TIMEOUT="45"
+
+passCommand() {
+  while getopts "a:e:" opt; do
+    case "$opt" in
+    a) ARGS="$OPTARG" ;;
+    e) ELEMENT="$OPTARG" ;;
+    *) echo "ERROR: incorrect flag!" ;;
+    esac
+  done
+  : "${ARGS=}"
+  COMMAND="
+    pass ${KEEPASSXC_PASS_PATH} | keepassxc-cli clip ${ARGS} ${KEEPASSXC_DATABASE_PATH} ${secret} ${CLIP_TIMEOUT} &
+    notify-send --icon=dialog-information \"${ELEMENT} is copied to clipboard!\"
+  "
+  eval ${COMMAND}
+  sleep 2
+  cliphist list | head -n 1 | cliphist delete
+}
+
+secret=$(pass "${KEEPASSXC_PASS_PATH}" | keepassxc-cli ls -R -f "${KEEPASSXC_DATABASE_PATH}" | sed -e '/\/$/d' -e '/Recycle Bin/d' | ${launcher} "Secret")
+[ -z "${secret}" ] && {
+  echo "No secret is selected!"
+  exit 1
+}
+element=$(echo -e "Autofill\nOTP\nPassword\nUsername" | ${launcher} "What do you want to copy?")
+[ -z "${element}" ] && {
+  echo "No element is selected!"
+  exit 1
+}
+
+if [ "${element}" == "Password" ]; then
+  passCommand -e "Password"
+elif [ "${element}" == "OTP" ]; then
+  passCommand -e "OTP" -a "-t"
+elif [ "${element}" == "Username" ]; then
+  passCommand -e "Username" -a "-a username"
+elif [ "${element}" == "Autofill" ]; then
+  username=$(pass "${KEEPASSXC_PASS_PATH}" | keepassxc-cli show -a username "${KEEPASSXC_DATABASE_PATH}" "${secret}")
+  password=$(pass "${KEEPASSXC_PASS_PATH}" | keepassxc-cli show -a password "${KEEPASSXC_DATABASE_PATH}" "${secret}")
+
+  echo "type ${username}" | dotoolc
+  echo "key Tab" | dotoolc
+  echo "type ${password}" | dotoolc
+  echo "key Enter" | dotoolc
+fi

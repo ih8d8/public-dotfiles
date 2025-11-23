@@ -1,0 +1,45 @@
+
+[colors.bright]
+black = "#767676"
+blue = "#1a8fff"
+cyan = "#14ffff"
+green = "#23fd00"
+magenta = "#fd28ff"
+red = "#f2201f"
+white = "#ffffff"
+yellow = "#fffd00"
+
+[colors.normal]
+black = "#000000"
+blue = "#0d73cc"
+cyan = "#0dcdcd"
+green = "#19cb00"
+magenta = "#cb1ed1"
+red = "#cc0403"
+white = "#dddddd"
+yellow = "#cecb00"
+
+[colors.primary]
+background = "#000000"
+foreground = "#dddddd"
+
+[font]
+size = 12
+
+[font.bold]
+family = "Dejavu Sans Mono"
+
+[font.bold_italic]
+family = "Dejavu Sans Mono"
+
+[font.italic]
+family = "Dejavu Sans Mono"
+
+[font.normal]
+family = "Dejavu Sans Mono"
+
+[window]
+opacity = 1
+
+[general]
+live_config_reload = true

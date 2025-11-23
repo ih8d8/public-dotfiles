@@ -1,0 +1,9 @@
+#!/bin/sh
+
+source ~/.local/bin/determine-launcher
+
+VM_NAME=$(virsh list --all --name | ${launcher} "Virtual Machines")
+if [ -n "${VM_NAME}" ]; then
+	virsh start "${VM_NAME}"
+	virt-manager --connect qemu:///session --show-domain-console "${VM_NAME}"
+fi

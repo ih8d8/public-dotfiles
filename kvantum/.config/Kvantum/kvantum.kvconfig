@@ -1,0 +1,5 @@
+[General]
+theme=KvSimplicityDarkLight
+
+[Applications]
+KvAmbiance=kdeconnect-sms

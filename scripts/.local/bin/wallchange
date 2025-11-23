@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+while getopts "s" opt; do
+case "$opt" in
+	s ) STARTUP="true" ;;
+	* ) echo "Invalid flag: -$OPTARG" >&2; exit 1 ;;
+esac
+done
+
+SCREEN_RES=$(xrandr --current | awk '/*/ {print $1}' | head -n 1)
+SCREEN_WIDTH=$(echo "${SCREEN_RES}" | cut -d 'x' -f 1)
+SCREEN_HEIGHT=$(echo "${SCREEN_RES}" | cut -d 'x' -f 2)
+WALLPAPER_PATH="$(readlink -f ${HOME}/Pictures/.wallpaper.jpg)"
+: ${STARTUP:=false}
+
+[ "${STARTUP}" == "true" ] && [ -f "${WALLPAPER_PATH}" ] && \
+{ 
+	swww query | awk '{print $1}' | cut -d':' -f1 | xargs -I{} -- swww img -o {} "${WALLPAPER_PATH}";
+}
+
+# Check if you have internet connection
+~/.local/bin/wait-for-internet -s 100
+[ "$?" == "0" ] && \
+{
+	# Download image or show error message
+	wget -O "${WALLPAPER_PATH}" "https://picsum.photos/${SCREEN_WIDTH}/${SCREEN_HEIGHT}" || \
+	{ notify-send --icon=dialog-error "Cannot download wallpaper!"; exit 1;}
+
+	# Set the downloaded image as wallpaper
+	[ -f "${WALLPAPER_PATH}" ] && \
+	{	
+		swww query | awk '{print $2}' | cut -d':' -f1 | xargs -I{} -- swww img --transition-type grow -o {} "${WALLPAPER_PATH}"
+	}
+}

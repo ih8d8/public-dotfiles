@@ -1,0 +1,26 @@
+#!/bin/bash
+
+COMMAND="playerctl"
+
+programs=(
+  "cmus"
+  "spotify"
+)
+
+for program in "${programs[@]}"; do
+  if pgrep -x "${program}" >/dev/null; then
+    COMMAND="playerctl --player=$program"
+  fi
+done
+
+while getopts "npst" opt; do
+  case "$opt" in
+  n) COMMAND="${COMMAND} next" ;;
+  p) COMMAND="${COMMAND} previous" ;;
+  t) COMMAND="${COMMAND} play-pause" ;;
+  s) COMMAND="${COMMAND} pause" ;;
+  *) echo "ERROR: unknown flag!" ;;
+  esac
+done
+
+eval ${COMMAND}

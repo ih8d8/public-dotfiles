@@ -1,0 +1,13 @@
+#!/bin/sh
+
+. ~/.local/bin/.env
+SSH_PID=$(netstat -tupln 2>/dev/null | awk '/127.0.0.1:8888/ {print $7}' | cut -d"/" -f1)
+if [ -z "${SSH_PID}" ]; then
+    ping -q -c 1 8.8.8.8 > /dev/null || { notify-send --icon=notification-network-wireless-disconnected "No internet connection detected."; exit ;}
+    autossh -M 0 -f -q -N -D ${SOCKS_PORT} root@${SERVER}
+    notify-send --icon=changes-prevent "ssh tunnel is created!"
+else
+    kill ${SSH_PID}
+    notify-send --icon=changes-allow "ssh tunnel is terminated!"
+fi
+

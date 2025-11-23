@@ -1,0 +1,4 @@
+#!/bin/sh
+
+ALACRITTY_STATUS=$(ps -fC alacritty | grep "dropdown")
+[ -z "${ALACRITTY_STATUS}" ] && alacritty --class Alacritty,dropdown -T dropdown-alacritty -e tmux

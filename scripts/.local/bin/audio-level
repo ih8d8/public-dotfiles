@@ -1,0 +1,19 @@
+#!/bin/bash
+
+[ $(pgrep dunst) ] && pkill dunst
+
+if [ "$1" == "increase" ]; then
+    pactl set-sink-volume @DEFAULT_SINK@ +5%
+    notify-send --icon=notification-audio-volume-high "Volume: $(pamixer --get-volume)%"
+elif [ "$1" == "decrease" ]; then
+    pactl set-sink-volume @DEFAULT_SINK@ -5%
+    notify-send --icon=notification-audio-volume-medium "Volume: $(pamixer --get-volume)%"
+elif [ "$1" == "toggle-mute" ]; then
+    pactl set-sink-mute @DEFAULT_SINK@ toggle
+    AUDIO_MUTED=$(pamixer --get-mute)
+    if [ "$AUDIO_MUTED" == "false" ]; then
+        notify-send --icon=notification-audio-volume-medium "Audio has been unmuted!"
+    else
+        notify-send --icon=notification-audio-volume-muted "Audio has been muted!"
+    fi
+fi

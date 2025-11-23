@@ -1,0 +1,176 @@
+configuration {
+    show-icons: true;
+    display-drun: "";
+    disable-history: false;
+}
+
+* {
+    font: "Jetbrains Mono 12";
+    
+    /* Colors from wofi config */
+    background-color: #282a36;
+    foreground: #f8f8f2;
+    border-color: #bd93f9;
+    selected-background: #44475a;
+    input-background: #44475a;
+    
+    /* Additional colors for rofi states */
+    active-background: #6272a4;
+    urgent-background: #ff5555;
+    urgent-foreground: #282a36;
+    selected-urgent-background: @urgent-background;
+    selected-active-background: @active-background;
+    separatorcolor: @border-color;
+}
+
+#window {
+    background-color: @background-color;
+    border: 1px;
+    border-radius: 0px;
+    border-color: @border-color;
+    padding: 5px;
+}
+
+#mainbox {
+    border: 0;
+    padding: 0;
+    background-color: @background-color;
+}
+
+#inputbar {
+    spacing: 0;
+    text-color: @foreground;
+    padding: 5px;
+    background-color: @input-background;
+    margin: 5px;
+    border: none;
+    children: [ prompt, textbox-prompt-colon, entry, case-indicator ];
+}
+
+#prompt {
+    spacing: 0;
+    text-color: @foreground;
+    background-color: inherit;
+}
+
+#textbox-prompt-colon {
+    expand: false;
+    str: ">";
+    margin: 0px 0.3em 0em 0em;
+    text-color: @foreground;
+    background-color: inherit;
+}
+
+#entry {
+    spacing: 0;
+    text-color: @foreground;
+    background-color: inherit;
+}
+
+#case-indicator {
+    spacing: 0;
+    text-color: @foreground;
+    background-color: inherit;
+}
+
+#message {
+    border: 0px;
+    border-color: @separatorcolor;
+    padding: 5px;
+    background-color: @background-color;
+}
+
+#textbox {
+    text-color: @foreground;
+    background-color: inherit;
+}
+
+#listview {
+    fixed-height: 0;
+    border: 0px;
+    border-color: @border-color;
+    spacing: 0px;
+    scrollbar: false;
+    padding: 5px;
+    background-color: @background-color;
+    margin: 5px;
+    lines: 10;
+}
+
+#element {
+    border: 0;
+    padding: 5px;
+    background-color: @background-color;
+    text-color: @foreground;
+}
+
+#element.normal.normal {
+    background-color: @background-color;
+    text-color: @foreground;
+}
+
+#element.normal.urgent {
+    background-color: @urgent-background;
+    text-color: @urgent-foreground;
+}
+
+#element.normal.active {
+    background-color: @active-background;
+    text-color: @foreground;
+}
+
+#element.selected.normal {
+    background-color: @selected-background;
+    text-color: @foreground;
+    font-weight: bold;
+}
+
+#element.selected.urgent {
+    background-color: @selected-urgent-background;
+    text-color: @foreground;
+    font-weight: bold;
+}
+
+#element.selected.active {
+    background-color: @selected-active-background;
+    text-color: @foreground;
+    font-weight: bold;
+}
+
+#element.alternate.normal {
+    background-color: @background-color;
+    text-color: @foreground;
+}
+
+#element.alternate.urgent {
+    background-color: @urgent-background;
+    text-color: @foreground;
+}
+
+#element.alternate.active {
+    background-color: @active-background;
+    text-color: @foreground;
+}
+
+#scrollbar {
+    width: 2px;
+    border: 0;
+    handle-width: 8px;
+    padding: 0;
+}
+
+#sidebar {
+    border: 2px dash 0px 0px;
+    border-color: @separatorcolor;
+}
+
+#button.selected {
+    background-color: @selected-background;
+    text-color: @foreground;
+}
+
+/* Make sure element text and icons inherit colors properly */
+element-text, element-icon {
+    background-color: inherit;
+    text-color: inherit;
+}

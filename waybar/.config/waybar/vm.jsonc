@@ -1,0 +1,19 @@
+{
+    "hyprland/language": {
+        "interval": 30,
+        "format": "⌨️ {}",
+        "keyboard-name": "at-translated-set-2-keyboard",
+        "on-click": "hyprctl switchxkblayout at-translated-set-2-keyboard next",
+        "signal": 8
+    },
+    
+    "temperature": {
+        "thermal-zone": 0,
+        "format": " {temperatureC}°C",
+        "format-alt-click": "click-right",
+        "format-alt": " {temperatureF}°F",
+        "critical-threshold": 70,
+        "format-critical": " {temperatureC}°C",
+        "on-click": "alacritty --title waybar-alacritty -e btop"
+    },
+}

@@ -1,0 +1,4 @@
+#!/bin/bash
+
+hyprctl dispatchers togglespecialworkspace
+tmux select-window -t 0:1

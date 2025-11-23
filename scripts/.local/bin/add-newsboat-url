@@ -1,0 +1,19 @@
+#!/bin/bash
+
+source ~/.local/bin/determine-launcher
+
+NB_URLS_FILE_PATH=$(readlink -f ~/.newsboat/urls)
+CHANNEL_URL=$(echo "" | ${launcher} "Channel URL")
+
+if [ -n "${CHANNEL_URL}" ]; then
+  CHANNEL_ID="$(wget -q -O - ${CHANNEL_URL} | grep -o -P 'channelId\":\".{0,24}' | tail -c 25)"
+  [ -z "${CHANNEL_ID}" ] && exit 1
+  RSS_URL="https://www.youtube.com/feeds/videos.xml?channel_id=${CHANNEL_ID}"
+  CHANNEL_TITLE=$(curl -s "${RSS_URL}" | grep -m 1 "<title>" | sed 's/<title>\(.*\)<\/title>/\1/' | sed 's| ||')
+  TAG=$(awk '/^#/ {print $2}' "${NB_URLS_FILE_PATH}" | ${launcher} "Tag")
+  [ -n "${TAG}" ] &&
+    {
+      NB_LINE="${RSS_URL} ${TAG} YouTube \"${CHANNEL_TITLE}\""
+      sed -i "/^# ${TAG}/a ${NB_LINE}" "${NB_URLS_FILE_PATH}" && notify-send --icon=dialog-information "Successfully added the YT channel!"
+    }
+fi

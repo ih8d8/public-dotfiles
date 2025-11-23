@@ -1,0 +1,10 @@
+#!/bin/sh
+
+GAMMASTEP_PID=$(ps -fC gammastep | awk '{if (NR!=1) {print $2}}')
+if [ -z "${GAMMASTEP_PID}" ]; then
+	gammastep &
+	notify-send --icon=redshift "gammastep is enabled!"
+else
+	kill "${GAMMASTEP_PID}"
+	notify-send --icon=redshift "gammastep is disabled!"
+fi

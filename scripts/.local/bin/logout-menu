@@ -1,0 +1,25 @@
+#!/bin/bash
+
+SELECTED=$(echo -e 'Log Out\nSleep\nReboot\nShut Down' | rofi -dmenu -p "Options")
+
+case $SELECTED in
+  'Log Out')
+    ANSWER=$(echo -e 'Yes\nNo' | rofi -dmenu -p "Are You Sure You Want To Log Out Of Your Session?")
+    [ "$ANSWER" == "Yes" ] && { i3-exit-cleanup; i3-msg exit; }
+    ;;
+  'Sleep')
+    ANSWER=$(echo -e 'Yes\nNo' | rofi -dmenu -p "Are You Sure You Want To Put The System To Sleep?")
+    [ "$ANSWER" == "Yes" ] && systemctl suspend
+    ;;
+  'Reboot')
+    ANSWER=$(echo -e 'Yes\nNo' | rofi -dmenu -p "Are You Sure You Want To Reboot The System?")
+    [ "$ANSWER" == "Yes" ] && { i3-exit-cleanup; reboot; }
+    ;;
+  'Shut Down')
+    ANSWER=$(echo -e 'Yes\nNo' | rofi -dmenu -p "Are You Sure You Want To Shut Down The System?")
+    [ "$ANSWER" == "Yes" ] && { i3-exit-cleanup; poweroff; }
+    ;;
+  *)
+    echo "Wrong Option!"
+    ;;
+esac

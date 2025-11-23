@@ -1,0 +1,88 @@
+"$schema" = "https://yazi-rs.github.io/schemas/yazi.json"
+
+[mgr]
+ratio          = [ 1, 4, 3 ]
+sort_by        = "natural"
+linemode       = "size"
+mouse_events   = [ "click", "scroll", "drag", "move"]
+
+[preview]
+tab_size        = 2
+max_width       = 1080
+max_height      = 1920
+ueberzug_scale  = 1
+ueberzug_offset = [ 57, 2, 0, 0 ]
+
+[opener]
+edit = [
+	{ run = '${EDITOR:=vim} "$@"', desc = "$EDITOR", block = true, for = "unix" },
+	{ run = 'code "$@"', orphan = true },
+]
+open = [
+	{ run = 'xdg-open "$1"',                desc = "Open", for = "linux" },
+	{ run = 'open "$@"',                    desc = "Open", for = "macos" },
+]
+reveal = [
+	{ run = 'xdg-open "$(dirname "$1")"',           desc = "Reveal", for = "linux" },
+	{ run = '''exiftool "$1"; echo "Press enter to exit"; read _''', block = true, desc = "Show EXIF", for = "unix" },
+]
+extract = [
+	{ run = 'ya pub extract --list "$@"', desc = "Extract here", for = "unix" },
+]
+play = [
+	{ run = 'firejail --net=none mpv --force-window "$@"', orphan = true, for = "unix" },
+	{ run = 'mpv --force-window "$@"', orphan = true, for = "unix" },
+	{ run = 'vlc "$@"', orphan = true},
+	{ run = '''mediainfo "$1"; echo "Press enter to exit"; read _''', block = true, desc = "Show media info", for = "unix" },
+]
+pdf = [
+	{ run = 'zathura "$@"', orphan = true, for = "unix" },
+]
+
+[open]
+rules = [
+	# Folder
+	{ name = "*/", use = [ "edit", "open", "reveal" ] },
+	# Text
+	{ mime = "text/*", use = [ "edit", "reveal" ] },
+	# Image
+	{ mime = "image/*", use = [ "open", "reveal" ] },
+	# Media
+	{ mime = "{audio,video}/*", use = [ "play", "reveal" ] },
+	# Archive
+	{ mime = "application/{,g}zip", use = [ "extract", "reveal" ] },
+	{ mime = "application/{tar,bzip*,7z*,xz,rar}", use = [ "extract", "reveal" ] },
+	# JSON
+	{ mime = "application/{json,ndjson}", use = [ "edit", "reveal" ] },
+	{ mime = "*/javascript", use = [ "edit", "reveal" ] },
+	# Empty file
+	{ mime = "inode/empty", use = [ "edit", "reveal" ] },
+	# PDF
+	{ mime = "application/pdf",             use = [ "open", "pdf", "reveal" ] },
+	# Fallback
+	{ name = "*", use = [ "open", "reveal" ] },
+]
+
+[plugin]
+  prepend_preloaders = [
+    # Replace magick, image, video with mediainfo
+    { mime = "{audio,video,image}/*", run = "mediainfo" },
+    { mime = "application/subrip", run = "mediainfo" },
+    # Adobe Illustrator
+    { mime = "application/postscript", run = "mediainfo" },
+  ]
+  prepend_previewers = [
+    # Replace magick, image, video with mediainfo
+    { mime = "{audio,video,image}/*", run = "mediainfo"},
+    { mime = "application/subrip", run = "mediainfo" },
+    # Adobe Illustrator
+    { mime = "application/postscript", run = "mediainfo" },
+  ]
+  # There are more extensions which are supported by mediainfo.
+  # Just add file's MIME type to `previewers`, `preloaders` above.
+  # https://mediaarea.net/en/MediaInfo/Support/Formats
+
+
+[tasks]
+micro_workers = 20
+macro_workers = 20

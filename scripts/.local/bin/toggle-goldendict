@@ -1,0 +1,15 @@
+#!/bin/bash
+
+popup="$1"
+
+GOLDENDICT_ACTIVE=$(hyprctl clients | grep -e "class: .*goldendict")
+if [ -z "${GOLDENDICT_ACTIVE}" ]; then
+	if [ "${popup}" == "popup" ]; then
+		echo "key ctrl+c" | dotool
+		goldendict $(wl-paste)
+	else
+		goldendict
+	fi
+else
+	hyprctl dispatch closewindow floating
+fi

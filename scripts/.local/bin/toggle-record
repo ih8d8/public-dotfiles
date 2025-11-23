@@ -1,0 +1,64 @@
+#!/bin/bash
+
+source ~/.local/bin/determine-launcher
+
+FFMPEG_PID=$(ps -fC ffmpeg | awk '/Recordings/ {print $2}')
+
+check_mic() {
+    MIC_MUTED=$(pamixer --default-source --get-mute)
+    [ "${MIC_MUTED}" == "true" ] && {
+        notify-send --icon=dialog-error "Please enable your microphone!"
+        exit
+    }
+}
+
+ffmpeg_command() {
+    while getopts "a:v" opt; do
+        case "$opt" in
+        a) AUDIO_SOURCE="$OPTARG" ;;
+        v) CAPTURE_SCREEN=true ;;
+        *) echo "ERROR: unknown flag!" ;;
+        esac
+    done
+    FILE_EXTENSION="mp3"
+    [ -n "${AUDIO_SOURCE}" ] && AUDIO_PARAMS="-f pulse -ac 2 -ar 44100 -i ${AUDIO_SOURCE}"
+    [ "${CAPTURE_SCREEN}" == "true" ] &&
+        {
+            SCREEN_WIDTH=$(cat /sys/class/graphics/*/virtual_size | cut -f1 -d',')
+            SCREEN_HEIGHT=$(cat /sys/class/graphics/*/virtual_size | cut -f2 -d',')
+            VIDEO_PARAMS="-video_size ${SCREEN_WIDTH}x${SCREEN_HEIGHT} -framerate 16 -f x11grab -i :0.0"
+            FILE_EXTENSION="mp4"
+        }
+    FFMPEG_COMMAND="ffmpeg ${VIDEO_PARAMS} ${AUDIO_PARAMS} ~/Recordings/$(date +%Y-%m-%d_%T).${FILE_EXTENSION} & FFMPEG_PID=$!"
+    eval ${FFMPEG_COMMAND}
+}
+
+if [ -z "${FFMPEG_PID}" ]; then
+    ANSWER=$(echo -e "Screen\nScreen + External Audio\nScreen + Internal Audio\nExternal Audio\nInternal Audio" | ${launcher} "What do you want to capture?")
+    [ -z "${ANSWER}" ] && exit 0
+
+    INTERNAL_AUDIO_INPUT="$(pacmd list-sinks | awk '/* index:/ {getline; print substr($2,2,length($2)-2)}').monitor"
+    case "${ANSWER}" in
+    "Screen")
+        ffmpeg_command -v
+        ;;
+    "Screen + External Audio")
+        check_mic
+        ffmpeg_command -v -a "default"
+        ;;
+    "Screen + Internal Audio")
+        ffmpeg_command -v -a "${INTERNAL_AUDIO_INPUT}"
+        ;;
+    "External Audio")
+        check_mic
+        ffmpeg_command -a "default"
+        ;;
+    "Internal Audio")
+        ffmpeg_command -a "${INTERNAL_AUDIO_INPUT}"
+        ;;
+    esac
+    notify-send --icon=record-desktop "Recording started!"
+else
+    kill "${FFMPEG_PID}"
+    notify-send --icon=record-desktop "Recording finished!"
+fi

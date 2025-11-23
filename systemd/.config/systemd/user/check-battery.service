@@ -1,0 +1,9 @@
+[Unit]
+Description=check battery level
+
+[Service]
+Type=simple
+ExecStart=/home/PLACEHOLDER_USERNAME/.local/bin/notify-battery-status
+
+[Install]
+WantedBy=default.target

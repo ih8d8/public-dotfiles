@@ -1,0 +1,23 @@
+#!/bin/bash
+
+CLIP_TIMEOUT="30"
+
+# Get current clipboard content hash
+before_hash=$(cliphist list | head -n 1 | sha256sum)
+
+# Run rofi-rbw
+rofi-rbw --clear-after "${CLIP_TIMEOUT}" --action copy --target password
+
+# Give it a second to copy, in case it's delayed
+sleep 1
+
+# Get new clipboard content hash
+after_hash=$(cliphist list | head -n 1 | sha256sum)
+
+# If clipboard changed, wait for clear timeout and then delete from cliphist
+if [ "${before_hash}" != "${after_hash}" ]; then
+  cliphist list | head -n 1 | cliphist delete
+fi
+
+
+

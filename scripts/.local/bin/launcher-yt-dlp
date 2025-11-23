@@ -1,0 +1,12 @@
+#!/bin/bash
+
+source ~/.local/bin/determine-launcher
+
+VIDEO_URL=$(echo "" | ${launcher} "Video URL")
+
+if [ -n "${VIDEO_URL}" ]; then
+    FORMAT=$(youtube-dl -F "${VIDEO_URL}" | awk '/^format/ {found=1; next} found' | ${launcher} "Formats" | awk '{print $1}')
+    if [ -n "${FORMAT}" ]; then
+        youtube-dl -N 8 -f "${FORMAT}" -o "${HOME}/Downloads/%(title)s.%(ext)s" "${VIDEO_URL}" && notify-send --icon=emblem-default "Successfully downloaded the video!"
+    fi
+fi

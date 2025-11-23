@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ "${XDG_SESSION_TYPE}" == "wayland" ]; then
+    clipboard_command="wl-paste"
+else
+    clipboard_command="xclip -o -selection clipboard"
+fi
+
+tmpfile=$(mktemp --suffix=.png)
+${clipboard_command} | qrencode -s 10 -o "$tmpfile"
+imv -s full "$tmpfile"
+rm "$tmpfile"

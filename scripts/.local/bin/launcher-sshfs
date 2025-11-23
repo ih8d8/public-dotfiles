@@ -1,0 +1,26 @@
+#!/bin/bash
+
+source ~/.local/bin/determine-launcher
+
+ROOT_MOUNT_POINT="/mnt/sshfs"
+SSHFS_SERVER=$(awk '/Host hi-|Host hetzner|Host vt-|Host ts-|Host homelab|Host worklab|Host sftpgo|nu-/ {print $2}' ~/.ssh/config | ${launcher} "sshfs servers")
+REMOTE_MOUNT_DIR="${SSHFS_SERVER}:/"
+[ -z "${SSHFS_SERVER}" ] && exit
+SSHFS_PID=$(ps -fC sshfs | grep "${SSHFS_SERVER}" | awk '{print $2}')
+mkdir -p "${ROOT_MOUNT_POINT}/${SSHFS_SERVER}"
+MOUNT_POINT="${ROOT_MOUNT_POINT}/${SSHFS_SERVER}"
+
+if [ -z "${SSHFS_PID}" ]; then
+    ping -q -c 1 8.8.8.8 > /dev/null || { notify-send --icon=notification-network-wireless-disconnected "No internet connection detected."; exit ;}
+    if sshfs "${REMOTE_MOUNT_DIR}" "${MOUNT_POINT}/"; then
+        notify-send --icon=drive-removable-media "${SSHFS_SERVER} has been mounted!"
+    else
+        notify-send --icon=dialog-error "Failed to mount sshfs directory!"
+    fi
+else
+    if fusermount3 -u "${MOUNT_POINT}"; then
+        notify-send --icon=drive-removable-media "${SSHFS_SERVER} has been unmounted!"
+    else
+        notify-send --icon=dialog-error "Failed to unmount sshfs directory!"
+    fi
+fi

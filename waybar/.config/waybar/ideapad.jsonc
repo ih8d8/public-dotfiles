@@ -1,0 +1,19 @@
+{
+    "hyprland/language": {
+        "interval": 30,
+        "format": "⌨️ {}",
+        "keyboard-name": "logitech-wireless-keyboard-pid:4023",
+        "on-click": "hyprctl switchxkblayout logitech-wireless-keyboard-pid:4023 next",
+        "signal": 8
+    },
+    
+    "temperature": {
+        "thermal-zone": 6,
+        "format": " {temperatureC}°C",
+        "format-alt-click": "click-right",
+        "format-alt": " {temperatureF}°F",
+        "critical-threshold": 70,
+        "format-critical": " {temperatureC}°C",
+        "on-click": "alacritty --title waybar-alacritty -e btop"
+    },
+}

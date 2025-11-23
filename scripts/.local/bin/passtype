@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -euo pipefail
+
+secret_path=${1:-passwords/misc/vaultwarden/main}
+
+password=$(pass "${secret_path}")
+echo "type ${password}" | dotoolc
+echo "key Enter" | dotoolc

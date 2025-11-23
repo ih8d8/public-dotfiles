@@ -1,0 +1,19 @@
+#!/bin/bash
+
+[ $(pgrep dunst) ] && pkill dunst
+
+if [ "$1" == "increase" ]; then
+    pactl set-source-volume @DEFAULT_SOURCE@ +5%
+    notify-send --icon=microphone-sensitivity-high "Mic Level: $(pamixer --default-source --get-volume)%"
+elif [ "$1" == "decrease" ]; then
+    pactl set-source-volume @DEFAULT_SOURCE@ -5%
+    notify-send --icon=microphone-sensitivity-medium "Mic Level: $(pamixer --default-source --get-volume)%"
+elif [ "$1" == "toggle-mute" ]; then
+    pactl set-source-mute @DEFAULT_SOURCE@ toggle
+    MIC_MUTED=$(pamixer --default-source --get-mute)
+    if [ "$MIC_MUTED" == "false" ]; then
+        notify-send --icon=mic-ready "Mic has been unmuted!"
+    else
+        notify-send --icon=mic-off "Mic has been muted!"
+    fi
+fi

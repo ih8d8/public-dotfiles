@@ -1,0 +1,13 @@
+[Unit]
+Description=check battery level every 1 minute
+RefuseManualStart=no
+RefuseManualStop=no
+
+[Timer]
+Persistent=true
+OnBootSec=120
+OnUnitActiveSec=60
+Unit=check-battery.service
+
+[Install]
+WantedBy=timers.target

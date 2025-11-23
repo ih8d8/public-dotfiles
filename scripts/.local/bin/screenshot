@@ -1,0 +1,17 @@
+#!/bin/bash
+set -x
+while getopts "e:i" opt
+do
+    case "$opt" in
+       i ) INTERACTIVE=true ;;
+       e ) EXTENSION="$OPTARG" ;;
+       * ) echo "invalid flag!" ;;
+    esac
+done
+: ${INTERACTIVE:=false}
+: ${EXTENSION:=png}
+
+[ "${INTERACTIVE}" == "false" ] && \
+  grim -t ${EXTENSION} ~/Pictures/$(date +%Y-%m-%d_%T).${EXTENSION} || \
+  grim -t ${EXTENSION} -g "$(slurp)" ~/Pictures/$(date +%Y-%m-%d_%T).${EXTENSION}
+[ "$?" == "0" ] && notify-send --icon=folder-blue-pictures "Screenshot has been saved!"

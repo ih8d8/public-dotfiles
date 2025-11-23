@@ -1,0 +1,13 @@
+#!/bin/bash
+
+tailscale_account=$(tailscale switch --list | awk 'NR>1 {gsub(/\*$/, "", $3); print $3}' | wofi --dmenu -p "Tailscale Account")
+
+if [ -n "${tailscale_account}" ]; then
+    if tailscale switch "${tailscale_account}"; then
+        notify-send --icon=network-wired "Switched to ${tailscale_account} Tailscale account!"
+    else
+        notify-send --icon=network-wired-error "Failed to switch to ${tailscale_account} Tailscale account!"
+    fi
+else
+    echo "No Tailscale account selected!"
+fi

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if ps --no-headers -fC bluetoothd >/dev/null; then
+  sudo systemctl stop bluetooth.service &&
+    notify-send --icon=bluetooth "Bluetooth Service" "Service stppoed!" ||
+    notify-send --icon=bluetooth "Bluetooth Service" "Failed to stop!"
+else
+  sudo systemctl start bluetooth.service &&
+    notify-send --icon=bluetooth "Bluetooth Service" "Service started!" ||
+    notify-send --icon=bluetooth "Bluetooth Service" "Failed to start!"
+fi
+
+systemctl status --no-pager bluetooth.service

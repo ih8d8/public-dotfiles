@@ -1,0 +1,107 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Default configuration
+readonly DEFAULT_TIMEOUT=1
+readonly DEFAULT_DNS_SERVER="8.8.8.8"
+readonly E_USAGE=64
+readonly E_NO_INTERNET=1
+
+# Help text
+show_usage() {
+    cat << EOF
+Usage: ${0##*/} [-s SECONDS] [-c COMMAND] [-h]
+
+Wait for internet connection and optionally execute a command.
+
+Options:
+    -s SECONDS   Number of seconds to wait (default: ${DEFAULT_TIMEOUT})
+    -c COMMAND   Command to execute when internet becomes available
+    -h           Show this help message
+EOF
+}
+
+# Validation functions
+validate_positive_integer() {
+    local value="${1}"
+    local param_name="${2}"
+    
+    if ! [[ "${value}" =~ ^[1-9][0-9]*$ ]]; then
+        echo "Error: ${param_name} must be a positive integer" >&2
+        show_usage
+        exit "${E_USAGE}"
+    fi
+}
+
+check_internet() {
+    ping -q -c 1 "${DEFAULT_DNS_SERVER}" >/dev/null 2>&1
+}
+
+notify_failure() {
+    local message="${1}"
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send --icon=notification-network-wireless-disconnected "${message}"
+    fi
+    echo "${message}" >&2
+}
+
+execute_command() {
+    local cmd="${1}"
+    if [ -n "${cmd}" ]; then
+        eval "${cmd}"
+        return $?
+    fi
+    return 0
+}
+
+main() {
+    local timeout="${DEFAULT_TIMEOUT}"
+    local command=""
+    
+    # Parse command line options
+    while getopts ":s:c:h" opt; do
+        case "${opt}" in
+            s)
+                timeout="${OPTARG}"
+                validate_positive_integer "${timeout}" "timeout"
+                ;;
+            c)
+                command="${OPTARG}"
+                ;;
+            h)
+                show_usage
+                exit 0
+                ;;
+            \?)
+                echo "Error: Invalid option -${OPTARG}" >&2
+                show_usage
+                exit "${E_USAGE}"
+                ;;
+            :)
+                echo "Error: Option -${OPTARG} requires an argument" >&2
+                show_usage
+                exit "${E_USAGE}"
+                ;;
+        esac
+    done
+
+    # Main loop to check internet connectivity
+    for ((i=1; i<=timeout; i++)); do
+        if check_internet; then
+            execute_command "${command}"
+            exit $?
+        fi
+        
+        # Don't sleep on the last iteration
+        if [ "${i}" -lt "${timeout}" ]; then
+            sleep 1
+        fi
+    done
+
+    notify_failure "No internet connection detected!"
+    exit "${E_NO_INTERNET}"
+}
+
+# Execute main function
+main "$@"

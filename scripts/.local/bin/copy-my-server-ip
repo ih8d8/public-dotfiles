@@ -1,0 +1,11 @@
+#!/bin/sh
+
+source ~/.local/bin/determine-launcher
+
+SERVER=$(awk '/Host .*-debian1|Host hetzner/ {print $2}' ~/.ssh/config | ${launcher} "my servers")
+if [ -z "$SERVER" ]; then
+    exit 1
+else
+    awk "/Host $SERVER/ {getline; print \$2}" ~/.ssh/config | wl-copy
+    notify-send "Copied IP of $SERVER to clipboard!"
+fi

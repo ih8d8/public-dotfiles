@@ -1,0 +1,10 @@
+#!/bin/sh
+
+while ! tmux list-windows >/dev/null 2>&1; do
+  sleep 1
+done
+
+tmux select-window -t 0:1
+tmux send-keys 'yy' 'KPEnter'
+sleep 2
+tmux new-window

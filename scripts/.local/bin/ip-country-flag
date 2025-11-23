@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+
+import requests
+import pycountry
+import json
+import sys
+
+data = {}
+ipinfo_token=''
+
+def get_ip_info():
+    try:
+        true_ip = requests.get('https://icanhazip.com', timeout=5).text.strip()
+        ip_info = requests.get(f'https://ipinfo.io/{true_ip}/?token={ipinfo_token}', timeout=5).json()
+        return ip_info
+    except Exception as e:
+        return None
+
+def get_country_code(ip_info):
+    return ip_info.get('country', '')
+
+def get_flag_emoji(name):
+    if not name:
+        return "🏳️"
+    
+    try:
+        country = pycountry.countries.get(alpha_2=name)
+        if country is None:
+            return "🏳️"
+        
+        # Fixed flag emoji generation - correct offset for regional indicator symbols
+        def box(ch): return chr(ord(ch) + 0x1f1e6 - ord('A'))
+        return box(country.alpha_2[0]) + box(country.alpha_2[1])
+    except:
+        return "🏳️"
+
+def format_tooltip(ip_info):
+    """Format IP information as readable text instead of JSON"""
+    if not ip_info:
+        return "Failed to retrieve IP information"
+    
+    tooltip_lines = []
+    
+    # Add IP information in a readable format
+    if 'ip' in ip_info or true_ip:
+        ip = ip_info.get('ip', true_ip if 'true_ip' in globals() else 'Unknown')
+        tooltip_lines.append(f"IP: {ip}")
+    
+    if 'city' in ip_info and 'region' in ip_info and 'country' in ip_info:
+        location = f"{ip_info['city']}, {ip_info['region']}, {ip_info['country']}"
+        tooltip_lines.append(f"Location: {location}")
+    elif 'country' in ip_info:
+        tooltip_lines.append(f"Country: {ip_info['country']}")
+    
+    if 'org' in ip_info:
+        tooltip_lines.append(f"ISP/Org: {ip_info['org']}")
+    
+    if 'postal' in ip_info:
+        tooltip_lines.append(f"Postal: {ip_info['postal']}")
+    
+    if 'timezone' in ip_info:
+        tooltip_lines.append(f"Timezone: {ip_info['timezone']}")
+    
+    if 'loc' in ip_info:
+        tooltip_lines.append(f"Coordinates: {ip_info['loc']}")
+    
+    return "\n".join(tooltip_lines)
+
+def main():
+    try:
+        ip_info = get_ip_info()
+        
+        if not ip_info:
+            data['text'] = "❌"
+            data['tooltip'] = "Failed to retrieve IP information"
+        else:
+            country_code = get_country_code(ip_info)
+            data['text'] = get_flag_emoji(country_code)
+            data['tooltip'] = format_tooltip(ip_info)
+        
+        # Use ensure_ascii=False to properly handle UTF-8 characters like flag emojis
+        print(json.dumps(data, ensure_ascii=False))
+        
+    except Exception as e:
+        error_data = {
+            'text': "❌",
+            'tooltip': f"Error: {str(e)}"
+        }
+        print(json.dumps(error_data, ensure_ascii=False))
+
+if __name__ == "__main__":
+    main()

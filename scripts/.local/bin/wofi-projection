@@ -1,0 +1,77 @@
+#!/bin/bash
+
+PRIMARY_MONITOR="eDP-1"
+PRIMARY_WIDTH="1920"
+PRIMARY_HEIGHT="1080"
+SECONDARY_MONITORS=$(hyprctl monitors all | awk '/^Monitor / {print $2}' | grep -v "${PRIMARY_MONITOR}")
+
+get_secondary_resolution() {
+  hyprctl monitors all | awk -v mon="$1" '$2 == mon {getline; split($1, parts, "@"); print parts[1]}'
+}
+
+if [ -n "${SECONDARY_MONITORS}" ]; then
+  SECONDARY_MONITOR=$(echo "${SECONDARY_MONITORS}" | wofi --dmenu -p "Please select a display source!")
+  SECONDARY_WIDTH=$(get_secondary_resolution "${SECONDARY_MONITOR}" | cut -d 'x' -f 1)
+  SECONDARY_HEIGHT=$(get_secondary_resolution "${SECONDARY_MONITOR}" | cut -d 'x' -f 2)
+  SCALING_FACTORS="1\n1.5\n2"
+
+  if [ -n "${SECONDARY_MONITOR}" ]; then
+    WOFI_OPTIONS="Mirror\nSecondary\nLeft\nRight\nTop\nBottom"
+  else
+    echo "No option is selected!"
+    exit 1
+  fi
+
+  SCALING_FACTOR=$(echo -e "${SCALING_FACTORS}" | wofi --dmenu -p "What is your preferred scaling factor?")
+  [ -z "${SCALING_FACTOR}" ] && {
+    echo "No option is selected!"
+    exit 1
+  }
+
+  ANSWER=$(echo -e "${WOFI_OPTIONS}" | wofi --dmenu -p "How do you want to project?" | tr '[:upper:]' '[:lower:]')
+  [ -z "${ANSWER}" ] && {
+    echo "No option is selected!"
+    exit 1
+  }
+
+  SCALED_SECONDARY_WIDTH=$(echo "${SECONDARY_WIDTH} / ${SCALING_FACTOR}" | bc)
+  SCALED_SECONDARY_HEIGHT=$(echo "${SECONDARY_HEIGHT} / ${SCALING_FACTOR}" | bc)
+
+  case ${ANSWER} in
+  mirror)
+    hyprctl keyword monitor ${PRIMARY_MONITOR},preferred,auto,1
+    hyprctl keyword monitor ${SECONDARY_MONITOR},preferred,auto,1,mirror,${PRIMARY_MONITOR}
+    ;;
+  secondary)
+    hyprctl keyword monitor ${PRIMARY_MONITOR},disable
+    hyprctl keyword monitor ${SECONDARY_MONITOR},preferred,auto,${SCALING_FACTOR}
+    ;;
+  left)
+    hyprctl keyword monitor ${SECONDARY_MONITOR},preferred,0x0,${SCALING_FACTOR}
+    hyprctl keyword monitor ${PRIMARY_MONITOR},preferred,${SCALED_SECONDARY_WIDTH}x0,1
+    ;;
+  right)
+    hyprctl keyword monitor ${PRIMARY_MONITOR},preferred,0x0,1
+    hyprctl keyword monitor ${SECONDARY_MONITOR},preferred,${PRIMARY_WIDTH}x0,${SCALING_FACTOR}
+    ;;
+  top)
+    hyprctl keyword monitor ${PRIMARY_MONITOR},preferred,0x${SCALED_SECONDARY_HEIGHT},1
+    hyprctl keyword monitor ${SECONDARY_MONITOR},preferred,0x0,${SCALING_FACTOR}
+    ;;
+  bottom)
+    hyprctl keyword monitor ${PRIMARY_MONITOR},preferred,0x0,1
+    hyprctl keyword monitor ${SECONDARY_MONITOR},preferred,0x${PRIMARY_HEIGHT},${SCALING_FACTOR}
+    ;;
+  *)
+    echo "No option is selected!"
+    exit 1
+    ;;
+  esac
+else
+  ANSWER=$(echo -e "Yes\nNo" | wofi --dmenu -p "Do you want to go back to the original config?")
+  if [ "${ANSWER}" = "Yes" ]; then
+    sed -n 's/^monitor=//p' ~/.dotfiles/hyprland/.config/hypr/hypr-monitor.conf | while read -r LINE; do
+    hyprctl keyword monitor ${LINE}
+    done
+  fi
+fi

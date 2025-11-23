@@ -1,0 +1,6 @@
+#!/bin/sh
+
+FILE=$(du -a ~/.local/bin/ | awk '{print $2}' | fzf)
+if [ $? -eq 0 ]; then
+  nvim $FILE
+fi

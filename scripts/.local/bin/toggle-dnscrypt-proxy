@@ -1,0 +1,12 @@
+#!/bin/sh
+
+FAKE_INTERFACE_NAME="dnscrypt"
+if [ -z "$(resolvconf -i | grep ${FAKE_INTERFACE_NAME})" ]; then
+  echo -e "nameserver ::1\nnameserver 127.0.0.1\noptions edns0 single-request-reopen" | sudo resolvconf -a "${FAKE_INTERFACE_NAME}"
+  sudo systemctl start dnscrypt-proxy.service
+else
+  sudo resolvconf -d "${FAKE_INTERFACE_NAME}"
+  sudo systemctl stop dnscrypt-proxy.service
+fi
+
+systemctl --no-pager status dnscrypt-proxy.service

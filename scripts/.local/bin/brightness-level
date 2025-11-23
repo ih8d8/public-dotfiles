@@ -1,0 +1,13 @@
+#!/bin/bash
+
+CHANGE_LEVEL="$2"
+: "${CHANGE_LEVEL:=1}"
+
+if [ "$1" == "increase" ]; then
+  brightnessctl set "+${CHANGE_LEVEL}%"
+elif [ "$1" == "decrease" ]; then
+  brightnessctl set "${CHANGE_LEVEL}%-"
+fi
+
+[ $(pgrep dunst) ] && pkill dunst
+notify-send --icon=notification-display-brightness "Brightness: $(brightnessctl -m | awk -F, '{print substr($4, 0, length($4)-1)}')%"

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+source ~/.local/bin/determine-launcher
+
+WG_CONFIG_DIR="$(readlink -f ~/.dotfiles/extra/VPNs/wireguard)"
+if [ -z "$(wg show interfaces)" ]; then
+    WG_CONFIG_FILE=$(ls ${WG_CONFIG_DIR} | ${launcher} "Wireguard Profiles")
+    if [ -n "${WG_CONFIG_FILE}" ]; then
+        ping -q -c 1 8.8.8.8 >/dev/null || {
+            notify-send --icon=notification-network-wireless-disconnected "No internet connection detected."
+            exit
+        }
+        if sudo wg-quick up "${WG_CONFIG_DIR}/${WG_CONFIG_FILE}"; then
+            flag=$(ip-country-flag | jq -r '.text')
+            notify-send --icon=changes-prevent "VPN Tunnel" "You're now connected to ${flag} !"
+        else
+            notify-send --icon=dialog-error "Something is wrong!"
+        fi
+    fi
+else
+    sudo wg-quick down "${WG_CONFIG_DIR}/$(wg show interfaces).conf" && notify-send --icon=changes-allow "VPN tunnel is terminated!" || notify-send --icon=dialog-error "Something is wrong!"
+fi

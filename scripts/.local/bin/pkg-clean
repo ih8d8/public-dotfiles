@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+#
+# Simple Arch Linux cache cleanup script for pacman and yay
+#
+
+set -euo pipefail
+
+echo "==> Cleaning package caches..."
+
+# 1. Remove orphaned packages
+if orphans=$(pacman -Qtdq 2>/dev/null); then
+    echo "Removing orphaned packages..."
+    sudo pacman -Rns --noconfirm $orphans
+else
+    echo "No orphaned packages found."
+fi
+
+# 2. Clean pacman cache - keep only the latest version of installed packages
+echo "Cleaning pacman cache..."
+sudo paccache -rk1
+sudo paccache -ruk0
+
+# 3. Clean yay/AUR cache using paccache
+echo "Cleaning yay cache..."
+yay -Sca --noconfirm
+
+echo "==> Cleanup complete!"

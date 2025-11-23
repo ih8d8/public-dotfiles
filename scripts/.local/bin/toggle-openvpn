@@ -1,0 +1,20 @@
+#!/bin/sh
+
+source ~/.local/bin/determine-launcher
+
+OPENVPN_PID="$(pgrep -x openvpn)"
+OPENVPN_CONFIG_DIR="$(readlink -f ~/.dotfiles/extra/VPNs/openvpn)"
+if [ -z "${OPENVPN_PID}" ]; then
+    OPENVPN_CONFIG_FILE=$(ls ${OPENVPN_CONFIG_DIR} | ${launcher} "OpenVPN Profiles")
+    if [ -n "${OPENVPN_CONFIG_FILE}" ]; then
+        ping -q -c 1 8.8.8.8 >/dev/null || {
+            notify-send --icon=notification-network-wireless-disconnected "No internet connection detected."
+            exit
+        }
+        sudo openvpn --config "${OPENVPN_CONFIG_DIR}/${OPENVPN_CONFIG_FILE}" --daemon
+        [ "$?" == "0" ] && notify-send --icon=changes-prevent "VPN tunnel is created!" || notify-send --icon=dialog-error "Something is wrong!"
+    fi
+else
+    sudo pkill -x openvpn
+    notify-send --icon=changes-allow "VPN tunnel is terminated!"
+fi
