@@ -3,6 +3,8 @@
 import json
 import requests
 from datetime import datetime
+import sys
+import time
 
 WEATHER_CODES = {
     '113': '☀️ ',
@@ -57,8 +59,40 @@ WEATHER_CODES = {
 
 data = {}
 
+# Retry configuration
+MAX_RETRIES = 3
+RETRY_DELAY = 2  # seconds
+TIMEOUT = 10  # seconds
 
-weather = requests.get("https://wttr.in/?format=j1").json()
+def fetch_weather_data():
+    """Fetch weather data with retry logic and error handling"""
+    for attempt in range(MAX_RETRIES):
+        try:
+            response = requests.get(
+                "https://wttr.in/?format=j1",
+                timeout=TIMEOUT,
+                headers={'User-Agent': 'waybar-wttr/1.0'}
+            )
+            response.raise_for_status()
+            return response.json()
+        except (requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+                requests.exceptions.RequestException) as e:
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(RETRY_DELAY)
+                continue
+            else:
+                # Return fallback data on final failure
+                print(json.dumps({
+                    "text": "🌐 Weather unavailable",
+                    "tooltip": f"Failed to fetch weather data: {str(e)}"
+                }), file=sys.stdout)
+                sys.exit(0)
+    return None
+
+weather = fetch_weather_data()
+if weather is None:
+    sys.exit(0)
 
 
 def format_time(time):
