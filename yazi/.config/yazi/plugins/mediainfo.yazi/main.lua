@@ -18,7 +18,6 @@ local STATE_KEY = {
 	units = "units",
 	hide_metadata = "hide_metadata",
 	prev_metadata_area = "prev_metadata_area",
-	prev_peek_data = "prev_peek_data",
 }
 
 local magick_image_mimes = {
@@ -29,6 +28,7 @@ local magick_image_mimes = {
 	["heif-sequence"] = true,
 	["heic-sequence"] = true,
 	jxl = true,
+	tiff = true,
 	xml = true,
 	["svg+xml"] = true,
 	["canon-cr2"] = true,
@@ -88,7 +88,9 @@ local function image_layer_count(job)
 	if layer_count then
 		return layer_count
 	end
-	local output, err = Command("identify"):arg({ tostring(job.file.url) }):output()
+	local output, err = Command("identify")
+		:arg({ tostring(job.file.path or job.file.cache or job.file.url.path or job.file.url) })
+		:output()
 	if err then
 		return 0
 	end
@@ -108,18 +110,6 @@ function M:peek(job)
 	if not job.mime then
 		return
 	end
-	set_state(STATE_KEY.prev_peek_data, {
-		file = tostring(job.file.url),
-		mime = job.mime,
-		area = {
-			x = job.area.x,
-			y = job.area.y,
-			w = job.area.w,
-			h = job.area.h,
-		},
-		args = job.args,
-		skip = job.skip,
-	})
 	local is_video = string.find(job.mime, "^video/")
 	local is_audio = string.find(job.mime, "^audio/")
 	local is_image = string.find(job.mime, "^image/")
@@ -211,6 +201,7 @@ function M:peek(job)
 		ya.preview_widget(job, {
 			ui.Clear(ui.Rect(get_state(STATE_KEY.prev_metadata_area))),
 		})
+		ya.sleep(0.1)
 	end
 	local rendered_img_rect = cache_img_url
 			and fs.cha(cache_img_url)
@@ -255,14 +246,12 @@ function M:peek(job)
 			:wrap(is_wrap and ui.Wrap.YES or ui.Wrap.NO),
 	})
 	-- NOTE: Hacky way to prevent image overlap with old metadata area
-	if not hide_metadata then
-		set_state(STATE_KEY.prev_metadata_area, {
-			x = job.area.x,
-			y = job.area.y + image_height,
-			w = job.area.w,
-			h = job.area.h - image_height,
-		})
-	end
+	set_state(STATE_KEY.prev_metadata_area, not hide_metadata and {
+		x = job.area.x,
+		y = job.area.y + image_height,
+		w = job.area.w,
+		h = job.area.h - image_height,
+	} or nil)
 end
 
 function M:seek(job)
@@ -276,19 +265,6 @@ function M:seek(job)
 	end
 end
 
-function M:re_peek()
-	local prev_peek_data = get_state(STATE_KEY.prev_peek_data)
-	if prev_peek_data then
-		prev_peek_data.file = File({
-			url = Url(prev_peek_data.file),
-			cha = fs.cha(Url(prev_peek_data.file)),
-		})
-		prev_peek_data.area = ui.area and ui.area("preview") or ui.Rect(prev_peek_data.area)
-
-		self:peek(prev_peek_data)
-	end
-end
-
 function M:preload(job)
 	local cache_img_url = ya.file_cache({ file = job.file, skip = 0 })
 	if not cache_img_url then
@@ -298,7 +274,7 @@ function M:preload(job)
 	cache_img_url = seekable_mimes[job.mime] and ya.file_cache(job) or cache_img_url
 	local cache_img_url_cha = cache_img_url and fs.cha(cache_img_url)
 	local err_msg = ""
-	local is_valid_utf8_path = is_valid_utf8(tostring(job.file.url))
+	local is_valid_utf8_path = is_valid_utf8(tostring(job.file.path or job.file.cache or job.file.url))
 	-- video mimetype
 	if job.mime then
 		if string.find(job.mime, "^video/") then
@@ -317,15 +293,11 @@ function M:preload(job)
 					"error",
 					"-threads",
 					1,
-					"-hwaccel",
-					"auto",
-					"-skip_frame",
-					"nokey",
 					"-an",
 					"-sn",
 					"-dn",
 					"-i",
-					tostring(job.file.url),
+					tostring(job.file.path or job.file.cache or job.file.url.path or job.file.url),
 					"-vframes",
 					1,
 					"-q:v",
@@ -339,13 +311,17 @@ function M:preload(job)
 				}):output()
 				-- NOTE: Some audio types doesn't have cover image -> error ""
 				if
-					(audio_preload_output and audio_preload_output.stderr ~= nil and audio_preload_output.stderr ~= "")
-					or audio_preload_err
+					(
+						audio_preload_output
+						and audio_preload_output.stderr ~= nil
+						and audio_preload_output.stderr ~= ""
+						and not audio_preload_output.stderr:find("Output file does not contain any stream")
+					) or audio_preload_err
 				then
 					err_msg = err_msg
 						.. string.format("Failed to start `%s`, Do you have `%s` installed?\n", "ffmpeg", "ffmpeg")
 				else
-					cache_img_url_cha = fs.cha(cache_img_url)
+					cache_img_url_cha, _ = fs.cha(cache_img_url)
 					if not cache_img_url_cha then
 						-- NOTE: Workaround case audio has no cover image. Prevent regenerate preview image
 						audio_preload_output, audio_preload_err = require("magick")
@@ -373,11 +349,11 @@ function M:preload(job)
 			-- image
 			elseif string.find(job.mime, "^image/") or job.mime == "application/postscript" then
 				local svg_plugin_ok, svg_plugin = pcall(require, "svg")
-				local _, magick_plugin = pcall(require, "magick")
+				local magick_plugin_ok, magick_plugin = pcall(require, "magick")
 				local mime = job.mime:match(".*/(.*)$")
 
 				local image_plugin = magick_image_mimes[mime]
-						and ((mime == "svg+xml" and svg_plugin_ok) and svg_plugin or magick_plugin)
+						and ((mime == "svg+xml" and svg_plugin_ok) and svg_plugin or (magick_plugin_ok and magick_plugin))
 					or require("image")
 
 				local cache_img_status, image_preload_err
@@ -402,7 +378,10 @@ function M:preload(job)
 						:arg({
 							"-background",
 							"none",
-							tostring(job.file.url) .. "[" .. tostring(layer_index) .. "]",
+							tostring(job.file.path or job.file.cache or job.file.url.path or job.file.url)
+								.. "["
+								.. tostring(layer_index)
+								.. "]",
 							"-auto-orient",
 							"-strip",
 							"-resize",
@@ -427,7 +406,7 @@ function M:preload(job)
 						:arg({
 							"-background",
 							"none",
-							tostring(job.file.url),
+							tostring(job.file.path or job.file.cache or job.file.url.path or job.file.url),
 							"-auto-orient",
 							"-strip",
 							"-flatten",
@@ -459,15 +438,20 @@ function M:preload(job)
 	local cmd = "mediainfo"
 	local output, err
 	if is_valid_utf8_path then
-		output, err = Command(cmd):arg({ tostring(job.file.url) }):output()
+		output, err = Command(cmd)
+			:arg({ tostring(job.file.path or job.file.cache or job.file.url.path or job.file.url) })
+			:output()
 	else
 		cmd = "cd "
-			.. path_quote(job.file.url.parent)
+			.. path_quote(job.file.path or job.file.cache or (job.file.url.path or job.file.url).parent)
 			.. " && "
 			.. cmd
 			.. " "
-			.. path_quote(tostring(job.file.url.name))
-		output, err = Command(SHELL):arg({ "-c", cmd }):arg({ tostring(job.file.url) }):output()
+			.. path_quote(tostring(job.file.path or job.file.cache or job.file.url.name))
+		output, err = Command(SHELL)
+			:arg({ "-c", cmd })
+			:arg({ tostring(job.file.path or job.file.cache or (job.file.url.path or job.file.url)) })
+			:output()
 	end
 	if err then
 		err_msg = err_msg .. string.format("Failed to start `%s`, Do you have `%s` installed?\n", cmd, cmd)
@@ -483,7 +467,9 @@ function M:entry(job)
 
 	if action == ENTRY_ACTION.toggle_metadata then
 		set_state(STATE_KEY.hide_metadata, not get_state(STATE_KEY.hide_metadata))
-		M:re_peek()
+		ya.emit("peek", {
+			force = true,
+		})
 	end
 end
 
